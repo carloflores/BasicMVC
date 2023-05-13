@@ -20,4 +20,10 @@ class Controller
         header('Content-Type: application/json');
         echo json_encode($data);
     }
+
+    protected function redirect($path)
+    {
+        header("Location: {$path}");
+        exit;
+    }
 }

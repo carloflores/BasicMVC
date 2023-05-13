@@ -1,0 +1,116 @@
+#!/usr/bin/env php
+<?php
+
+
+class BasicMVC {
+
+    private $pdo;
+
+    public function __construct()
+    {
+        $config = require __DIR__ . '/config/database.php';
+        $this->pdo = new PDO(
+            'mysql:host=' . $config['host'] . ';dbname=' . $config['db'] . ';charset=' . $config['charset'],
+            $config['user'],
+            $config['pass']
+        );
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
+
+    public function makeController($name) {
+        $template = "<?php\n\n
+class $name extends Controller {\n
+    public function index() {\n
+        \$this->view('$name/index');\n
+    }\n
+}\n";
+        file_put_contents("app/controllers/$name.php", $template);
+    }
+
+    public function makeModel($name) {
+        $template = "<?php\n\n
+class $name extends Model {\n
+    // TODO: Define methods for this model...\n
+}\n";
+        file_put_contents("app/models/$name.php", $template);
+    }
+
+    public function makeMigration($name)
+    {
+        $template = "<?php\n\n
+class {$name}Migration extends Migration {\n
+    public function up() {\n
+        // TODO: Write the code to apply the migration...\n
+    }\n\n
+    public function down() {\n
+        // TODO: Write the code to revert the migration...\n
+    }\n
+}\n";
+        file_put_contents("database/migrations/{$name}Migration.php", $template);
+    }
+
+    public function migrate()
+    {
+        $config = require __DIR__ . '/config/database.php';
+
+        // Create the migrations table if it doesn't exist
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS migrations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                migration VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ");
+
+        $completedMigrations = $this->pdo->query('SELECT migration FROM migrations')->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach (glob('database/migrations/*Migration.php') as $filename) {
+            $class = basename($filename, '.php');
+
+            if (!in_array($class, $completedMigrations)) {
+                require_once $filename;
+                $migration = new $class;
+                $migration->up();
+
+                $this->pdo->query("INSERT INTO migrations (migration) VALUES ('$class')");
+            }
+        }
+    }
+
+
+    public function serve($port)
+    {
+        echo shell_exec("php -S localhost:$port -t public/");
+    }
+
+}
+
+$basicmvc = new BasicMVC();
+
+if ($argc > 2) {
+    $command = $argv[1];
+    $name = $argv[2];
+
+    switch ($command) {
+        case 'make:controller':
+            $basicmvc->makeController($name);
+            break;
+        case 'make:model':
+            $basicmvc->makeModel($name);
+            break;
+        case 'make:migration':
+            $basicmvc->makeMigration($name);
+            break;
+        case 'migrate':
+            $basicmvc->migrate();
+            break;
+        case 'serve':
+            $basicmvc->serve($name);
+            break;
+        default:
+            echo "Invalid command.\n";
+            break;
+    }
+} else {
+    echo "Insufficient parameters.\n";
+}

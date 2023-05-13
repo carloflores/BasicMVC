@@ -7,7 +7,7 @@
 ## Installation
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/BasicMVC
+git clone https://github.com/carloflores/BasicMVC
 ```
 
 2. Navigate to the project folder:

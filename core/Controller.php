@@ -11,7 +11,8 @@ class Controller
 
     protected function view($view, $data = [])
     {
-        require_once '../app/views/' . $view . '.php';
+        $viewController = new \View;
+        $viewController::render($view, $data);
     }
 
     protected function response($data)

@@ -6,17 +6,6 @@ class BasicMVC {
 
     private $pdo;
 
-    public function __construct()
-    {
-        $config = require __DIR__ . '/config/database.php';
-        $this->pdo = new PDO(
-            'mysql:host=' . $config['host'] . ';dbname=' . $config['db'] . ';charset=' . $config['charset'],
-            $config['user'],
-            $config['pass']
-        );
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    }
-
     public function makeController($name) {
         $template = "<?php\n\n
 class $name extends Controller {\n
@@ -52,6 +41,12 @@ class {$name}Migration extends Migration {\n
     public function migrate()
     {
         $config = require __DIR__ . '/config/database.php';
+        $this->pdo = new PDO(
+            'mysql:host=' . $config['host'] . ';dbname=' . $config['db'] . ';charset=' . $config['charset'],
+            $config['user'],
+            $config['pass']
+        );
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Create the migrations table if it doesn't exist
         $this->pdo->exec("
@@ -76,13 +71,10 @@ class {$name}Migration extends Migration {\n
             }
         }
     }
-
-
     public function serve($port)
     {
         echo shell_exec("php -S localhost:$port -t public/");
     }
-
 }
 
 $basicmvc = new BasicMVC();
